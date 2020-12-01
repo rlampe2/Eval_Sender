@@ -211,14 +211,15 @@ for p in file:
     msg['Subject'] = Template(eval_config.email_subject).substitute(first_name = p.firstName, last_name = p.lastName, course = p.course, position = p.position)
     msg['From'] = user_email
     msg['To'] = p.email
-
-    text = msg.as_string()
+    msg.set_content(body)
+#    text = msg.as_string()
     #send
     #DEBUG
     if first:
         print("Here is what an example looks like:")
-        print(text)
-        print(body)
+    #    print(text)
+    #    print(body)
+        print(str(msg))
         first = False
         cont = input("Continue? (Yes/No) ")
         if not(cont[0] == 'y' or cont[0] == 'Y'):
@@ -230,8 +231,8 @@ for p in file:
     print("Logging In")
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context = context) as server:
         server.login(user_email, user_password)
-        server.sendmail(user_email, p.email, text )
-
+    #    server.sendmail(user_email, p.email, text )
+        server.send_message(msg)
 
 
 
