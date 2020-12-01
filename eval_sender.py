@@ -45,6 +45,7 @@
 import xlrd
 import os.path
 import re
+import eval_config
 
 #LA struct
 class LA:
@@ -62,8 +63,8 @@ class LA:
 #HEY YOU! CHANGE THESE!
 #TODO - MOVE TO CONFIG FILE!
 
-la_roster_file_path = ("C:\\Users\\rjlam\\Documents\\LAP\\LA_Roster.xlsx")
-evaluation_folder_path = ("C:\\Users\\rjlam\\Documents\\LAP\\Compiled Final Evals\\Compiled Final Evals")
+la_roster_file_path = eval_config.la_roster_file_path
+evaluation_folder_path = eval_config.evaluation_folder_path
 
 
 
@@ -160,7 +161,7 @@ num_with_file = 0
 
 for p in las:
     indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.course}\\PDFs\\{p.lastName}_{short_eval_name}.pdf"
-    #DEBUG: print(indv_eval_file)
+    print(indv_eval_file)
     if not os.path.isfile(indv_eval_file):
         num_without_file += 1
         no_file.append(p)
@@ -189,6 +190,47 @@ if not(cont[0] == 'y' or cont[0] == 'Y'):
 #load up all the emails:
 
 
+#TODO LOAD FILES
+print("------------------------\nLoading Emails!")
+first = True
+from string import Template
+import smtplib
+import ssl
+from email.message import EmailMessage
+
+
+user_email = eval_config.user_email
+user_password = eval_config.user_email_password
+
+
+
+for p in file:
+    body = Template(eval_config.email_body).substitute(first_name = p.firstName, last_name = p.lastName, course = p.course, position = p.position)
+
+    msg = EmailMessage()
+    msg['Subject'] = Template(eval_config.email_subject).substitute(first_name = p.firstName, last_name = p.lastName, course = p.course, position = p.position)
+    msg['From'] = user_email
+    msg['To'] = p.email
+
+    text = msg.as_string()
+    #send
+    #DEBUG
+    if first:
+        print("Here is what an example looks like:")
+        print(text)
+        print(body)
+        first = False
+        cont = input("Continue? (Yes/No) ")
+        if not(cont[0] == 'y' or cont[0] == 'Y'):
+            print("Exiting...")
+            exit()
+    print("Creating SSL Context")
+    context = ssl.create_default_context()
+
+    print("Logging In")
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context = context) as server:
+        server.login(user_email, user_password)
+        server.sendmail(user_email, p.email, text )
 
 
 
