@@ -5,11 +5,14 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
-user_email = 'cselearningassistant@gmail.com'
-user_password = ''
+#use our credentials
+import credentials
+
+user_email = credentials.user_email
+user_password = credentials.user_email_password
 
 to = ['glampe99@gmail.com']
-subject = 'Test of Python Mailer'
+subject = 'Second: Test of Python Mailer'
 body = 'I sent this with python!'
 
 
