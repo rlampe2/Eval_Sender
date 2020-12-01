@@ -6,7 +6,7 @@ import ssl
 from email.message import EmailMessage
 
 user_email = 'cselearningassistant@gmail.com'
-user_password = 'CSELearningAssistantProgram!'
+user_password = ''
 
 to = ['glampe99@gmail.com']
 subject = 'Test of Python Mailer'
