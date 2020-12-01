@@ -10,14 +10,6 @@
 
 
 
-
-#Misc:
-#
-# Apparently, you need to know the file id to download a file from box, not just the filepath... so search API!
-# https://github.com/box/box-node-sdk/issues/344
-# https://stackoverflow.com/questions/45870835/how-to-obtain-file-id-from-file-name-in-box-com-api
-
-
 #SETUP:
 # 1. Download the Course LA Roster for the current semester from box
 #    (Should be named Year Term.xlsx in the Course LA Roster Folder)
@@ -56,16 +48,11 @@ class LA:
         self.course = course
         self.position = position
         self.eval_path = eval_path
-        self.downloadSuccess = downloadSuccess #To come with box api
+        self.downloadSuccess = downloadSuccess #Unimplemented until Box API approved
 
-
-
-#HEY YOU! CHANGE THESE!
-#TODO - MOVE TO CONFIG FILE!
 
 la_roster_file_path = eval_config.la_roster_file_path
 evaluation_folder_path = eval_config.evaluation_folder_path
-
 
 
 #Open book:
@@ -80,9 +67,6 @@ columnNamesDict = dict()
 for i in range(sheet.ncols):
     columnName = sheet.cell_value(0,i)
     columnNamesDict[columnName] = i #The column name is the key, and the i is its index.
-
-#TODO REMOVE PRINT DEBUG
-    #print(columnName)
 
 #Make sure that the dictonary has the columns that we need:
 requiredColumns = ['FirstName', 'LastName', 'Course', 'Position', 'Email']
@@ -104,11 +88,6 @@ for i in range(0, n):
         if h[0] == 'y' or h[0] == 'Y':
             courses.append('156H')
     courses.append(course)
-
-
-#TODO DEBUG REMOVE
-#for c in courses:
-#    print(c)
 
 positions = list()
 
@@ -145,12 +124,6 @@ for i in range(1, sheet.nrows): #skip the first row as it should be column heade
     if la.course in courses and la.position in positions:
         las.append(la)
 
-#Debug:
-#print("%-10s, %-10s --- %15s   %5s   %5s" % ("FistName" , "Lastname" , "Email" , "Postiion", "Course"))
-#for p in las:
-#    prettyName = "%-10s, %-10s --- %15s   %5s   %5s" % (p.firstName, p.lastName, p.email, p.position, p.course)
-#    print(prettyName)
-
 
 #Find the files for each LA
 
@@ -186,12 +159,7 @@ if not(cont[0] == 'y' or cont[0] == 'Y'):
     print("Exiting...")
     exit()
 
-#Go ahead and load and send what we got, and write it to a log:
-
 #load up all the emails:
-
-
-#TODO LOAD FILES
 print("------------------------\nLoading Emails!")
 first = True
 from string import Template
@@ -213,14 +181,7 @@ for p in file:
     msg['From'] = user_email
     msg['To'] = p.email
     msg.set_content(body)
-    print(p.eval_path)
-    with open(p.eval_path, "rb") as content_file:
-        content = content_file.read()
-        msg.add_attachment(content, maintype='application', subtype='pdf', filename= f"{p.lastName}_{short_eval_name}.pdf")
-    #msg.add_attachment(open(p.eval_path, "rb").read(), filename= "hellowrodl.pdf")#f"{p.lastName}_{short_eval_name}.pdf")
-#    text = msg.as_string()
-    #send
-    #DEBUG
+    #Print this first before attaching PDF - otherwise it'll flood stdout
     if first:
         print("Here is what an example looks like:")
         print(str(msg))
@@ -229,6 +190,11 @@ for p in file:
         if not(cont[0] == 'y' or cont[0] == 'Y'):
             print("Exiting...")
             exit()
+
+    with open(p.eval_path, "rb") as content_file:
+        content = content_file.read()
+        msg.add_attachment(content, maintype='application', subtype='pdf', filename= f"{p.lastName}_{short_eval_name}.pdf")
+
     print("Creating SSL Context")
     context = ssl.create_default_context()
 
@@ -236,18 +202,3 @@ for p in file:
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context = context) as server:
         server.login(user_email, user_password)
         server.send_message(msg)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
