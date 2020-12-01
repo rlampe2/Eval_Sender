@@ -49,13 +49,13 @@ import eval_config
 
 #LA struct
 class LA:
-    def __init__(self, firstName, lastName, email, course, position, evalFound, downloadSuccess):
+    def __init__(self, firstName, lastName, email, course, position, eval_path, downloadSuccess):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.course = course
         self.position = position
-        self.evalFound = evalFound
+        self.eval_path = eval_path
         self.downloadSuccess = downloadSuccess #To come with box api
 
 
@@ -162,6 +162,7 @@ num_with_file = 0
 for p in las:
     indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.course}\\PDFs\\{p.lastName}_{short_eval_name}.pdf"
     print(indv_eval_file)
+    p.eval_path = indv_eval_file
     if not os.path.isfile(indv_eval_file):
         num_without_file += 1
         no_file.append(p)
@@ -212,13 +213,16 @@ for p in file:
     msg['From'] = user_email
     msg['To'] = p.email
     msg.set_content(body)
+    print(p.eval_path)
+    with open(p.eval_path, "rb") as content_file:
+        content = content_file.read()
+        msg.add_attachment(content, maintype='application', subtype='pdf', filename= f"{p.lastName}_{short_eval_name}.pdf")
+    #msg.add_attachment(open(p.eval_path, "rb").read(), filename= "hellowrodl.pdf")#f"{p.lastName}_{short_eval_name}.pdf")
 #    text = msg.as_string()
     #send
     #DEBUG
     if first:
         print("Here is what an example looks like:")
-    #    print(text)
-    #    print(body)
         print(str(msg))
         first = False
         cont = input("Continue? (Yes/No) ")
@@ -231,7 +235,6 @@ for p in file:
     print("Logging In")
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context = context) as server:
         server.login(user_email, user_password)
-    #    server.sendmail(user_email, p.email, text )
         server.send_message(msg)
 
 
