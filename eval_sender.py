@@ -38,19 +38,24 @@
 #Expected folder structure for evals:
 # Evaluation Name -> LA Reports, CL Reports (Optional) -> 101, 156, 155E, etc.(opt) -> PDFs -> LastName_Final.pdf
 
+#Expected File naming convention: LastName_ShortEvalname.pdf.  Eg: Lampe_Mid.pdf
+
 
 
 import xlrd
+import os.path
+import re
 
 #LA struct
 class LA:
-    def __init__(self, firstName, lastName, email, course, evalFound, downloadSuccess):
+    def __init__(self, firstName, lastName, email, course, position, evalFound, downloadSuccess):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
-        self.evalFound = evalFound
         self.course = course
-        self.downloadSuccess = downloadSuccess
+        self.position = position
+        self.evalFound = evalFound
+        self.downloadSuccess = downloadSuccess #To come with box api
 
 
 
@@ -63,6 +68,9 @@ evaluation_folder_path = ("C:\\Users\\rjlam\\Documents\\LAP\\Compiled Final Eval
 
 
 #Open book:
+if not os.path.isfile(la_roster_file_path):
+    print("Couldn't find LA Roster File. Exiting...")
+    exit()
 wb = xlrd.open_workbook(la_roster_file_path)
 sheet = wb.sheet_by_index(0)
 
@@ -71,8 +79,9 @@ columnNamesDict = dict()
 for i in range(sheet.ncols):
     columnName = sheet.cell_value(0,i)
     columnNamesDict[columnName] = i #The column name is the key, and the i is its index.
-    #TODO REMOVE PRINT DEBUG
-    print(columnName)
+
+#TODO REMOVE PRINT DEBUG
+    #print(columnName)
 
 #Make sure that the dictonary has the columns that we need:
 requiredColumns = ['FirstName', 'LastName', 'Course', 'Position', 'Email']
@@ -81,22 +90,118 @@ for c in requiredColumns:
         print("Unable to find column: %s. Quitting." % c)
         exit()
 
+#Ask which courses to do evals for:
+courses = list()
+n = int(input("Enter the number of courses this eval is for:"))
+for i in range(0, n):
+    course = input("Enter course number: ")
+    #Remove CSCE- if included
+    course = re.sub("^[^1]*1", "1", course ) #Replace all text leading up to 1.
+    course = course.upper()
+    if course == '156':
+        h = input("Include 156H? (Yes/No) ")
+        if h[0] == 'y' or h[0] == 'Y':
+            courses.append('156H')
+    courses.append(course)
 
 
-print("Looking for mathing names and evaluation files")
+#TODO DEBUG REMOVE
+#for c in courses:
+#    print(c)
+
+positions = list()
+
+p = input("Will some of these evals be sent to LAs? (Yes/No) ")
+if p[0] == 'y' or p[0] == 'Y':
+    positions.append('LA')
+
+p = input("Will some of these evals be sent to CLs? (Yes/No) ")
+if p[0] == 'y' or p[0] == 'Y':
+    positions.append('CL')
+
+
+
+print("\nWe need the last part of the file name for each evaluation.\n  Eg if the filenames are like: Lampe_Final.pdf, Hahn_Final.pfd then enter \"Final\"\n (without quotes, no extension!)")
+short_eval_name = input("Please enter the last part of the eval name: ")
+
+
+print("Looking for mathing names and evaluation files for\n  Position(s): %s \n  Course(s):   %s\n\n " % (str(positions), str(courses) ) )
 
 #build a list of las = []
 las = list()
 
 for i in range(1, sheet.nrows): #skip the first row as it should be column headers
-    fname = sheet.cell_value(i, 0)
-    lname = sheet.cell_value(i, 1)
-    email = sheet.cell_value(i, 2)
-    course = sheet.cell_value(i, 3)
-    la = LA(fname, lname, email, course, False, False)
-    las.append(la)
+    fname = sheet.cell_value(i, columnNamesDict['FirstName'])
+    lname = sheet.cell_value(i, columnNamesDict['LastName'])
+    email = sheet.cell_value(i, columnNamesDict['Email'])
+    course = str(sheet.cell_value(i, columnNamesDict['Course'])).upper()
+    #Since reading from excel can have 101.0 instead of 101, but can't round
+    #since 155N isn't an int:
+    if '.' in course:
+        course = str(int(float(course)))
+    position = sheet.cell_value(i, columnNamesDict['Position'])
+    la = LA(fname, lname, email, course, position, False, False)
+    if la.course in courses and la.position in positions:
+        las.append(la)
+
+#Debug:
+#print("%-10s, %-10s --- %15s   %5s   %5s" % ("FistName" , "Lastname" , "Email" , "Postiion", "Course"))
+#for p in las:
+#    prettyName = "%-10s, %-10s --- %15s   %5s   %5s" % (p.firstName, p.lastName, p.email, p.position, p.course)
+#    print(prettyName)
+
+
+#Find the files for each LA
+
+file = list()
+no_file = list()
+num_without_file = 0
+num_with_file = 0
 
 for p in las:
-    prettyName = "%-10s, %-10s --- %15s" % (p.firstName, p.lastName, p.email)
+    indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.course}\\PDFs\\{p.lastName}_{short_eval_name}.pdf"
+    #DEBUG: print(indv_eval_file)
+    if not os.path.isfile(indv_eval_file):
+        num_without_file += 1
+        no_file.append(p)
+    else:
+        file.append(p)
+        num_with_file += 1
+
+print("----------------------------\nSearching Complete. \nResults: \nEvals found: %s. \nEvals not found: %s" % (num_with_file, num_without_file))
+print("LAs/CLs with eval files: ")
+for p in file:
+    prettyName = "%-10s, %-10s --- %15s   %5s   %5s" % (p.firstName, p.lastName, p.email, p.position, p.course)
     print(prettyName)
-#    print(p.firstName + ", " + p.lastName + " --- " + p.email)
+
+if num_without_file != 0:
+    print("LAs/CLs without evals found:-----------------------")
+    for p in no_file:
+       prettyName = "%-10s, %-10s --- %15s   %5s   %5s" % (p.firstName, p.lastName, p.email, p.position, p.course)
+       print(prettyName)
+cont = input("Continue to email LAs/CLs with found files?")
+if not(cont[0] == 'y' or cont[0] == 'Y'):
+    print("Exiting...")
+    exit()
+
+#Go ahead and load and send what we got, and write it to a log:
+
+#load up all the emails:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
