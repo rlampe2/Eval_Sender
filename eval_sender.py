@@ -1,7 +1,7 @@
-#Author Ryan Lampe
+# Author Ryan Lampe
 # Python Program to send CSELAP Evaluations to LAs
 
-#Directions for windows
+# Directions for windows
 # 1. Install Python: https://www.python.org/downloads/windows/
 # 2.  Go to commandline, navigate to the directory where this script is stored
 #     Ensure that the LA_Roster is also in the same directory
@@ -10,11 +10,11 @@
 
 
 
-#SETUP:
+# SETUP:
 # 1. Download the Course LA Roster for the current semester from box
 #    (Should be named Year Term.xlsx in the Course LA Roster Folder)
-# 1b.  Update la_roster filepath below with the path to whereever the
-#      file was downloaed to. In windows, if you find the file in file explorer,
+# 1b.  Update la_roster filepath below with the path to wherever the
+#      file was downloaded to. In windows, if you find the file in file explorer,
 #      you can hold shift and right click the file and choose "Copy as path"
 #      the updated variable should look something like this:
 #      la_roster_file_path = ("C:\\Users\\rjlam\\Documents\\LAP\\Evaluation_Automation\\LA_Roster.xlsx")
@@ -25,6 +25,10 @@
 # 2b.  Update the evaluation folder path to the filepath for wherever the
 #      evals folder was downloaded. (This folder should then contain subfolders
 #      LA's (and/or CLs) )
+
+#  3a: Update the filename section (see below, about line 139) to use the correct filename type if it isn't
+#      lastname_evalType.pdf.  (Then just press enter when the eval name is asked for in command prompt.)
+#  4a: You may need to update the roster (change the column headings from firstName to FirstName etc)
 
 
 #Expected folder structure for evals:
@@ -73,6 +77,7 @@ requiredColumns = ['FirstName', 'LastName', 'Course', 'Position', 'Email']
 for c in requiredColumns:
     if c not in columnNamesDict:
         print("Unable to find column: %s. Quitting." % c)
+        print(la_roster_file_path)
         exit()
 
 #Ask which courses to do evals for:
@@ -133,7 +138,9 @@ num_without_file = 0
 num_with_file = 0
 
 for p in las:
-    indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.course}\\PDFs\\{p.lastName}_{short_eval_name}.pdf"
+    # Note: It may be necessary to trim the lastname as in the second ind_eval_filepath. Also, notice that the filename format may need to be changed.
+    #  indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.course}\\PDFs\\{p.lastName}_{short_eval_name}.pdf"
+    indv_eval_file = f"{evaluation_folder_path}\\{p.position} Reports\\{p.firstName}{p.lastName.replace(' ', '')}.pdf"
     print(indv_eval_file)
     p.eval_path = indv_eval_file
     if not os.path.isfile(indv_eval_file):
